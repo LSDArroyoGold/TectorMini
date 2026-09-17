@@ -1,0 +1,58 @@
+# ATENCION -- este archivo tiene estado REAL del dispositivo (FIRST_START,
+# coordenadas), no es una plantilla. Por eso actualizar_repo.sh lo excluye
+# a proposito de la sincronizacion automatica. NUNCA copiar este archivo
+# tal cual (scp/cp) de un dispositivo a otro ni del repo a un dispositivo
+# ya instalado -- ver la advertencia equivalente en LSD-Tector2.0 (paso
+# una vez, 3/9/2026, con FIRST_START).
+
+# Ruta de la carpeta en Google Drive donde se sincronizan datos y configuración
+# Puede ser una carpeta en la raíz (ej: Tector Mini) o anidada.
+#
+# Auth: OAuth de usuario con scope "drive.file" (ver
+# config/rclone.conf.ejemplo para el detalle del token) -- una cuenta de
+# servicio NO puede escribir en un Drive personal, ver la nota de
+# LSD-Tector2.0/config/config_general.txt para el porque.
+DRIVE_PATH=Tector Mini
+
+# -------------------------
+
+# Retencion de audio LOCAL y de DRIVE (ver scripts/limpiar_retencion.sh).
+# Cuando el total (local o Drive, cada uno con su propio limite) supera el
+# limite, se borran carpetas de FECHA ENTERAS empezando por la mas vieja
+# -- nunca archivos sueltos de un dia a medias. Corre por cron una vez al
+# dia (Tector Mini no tiene cierres de ventana que la disparen).
+RETENCION_AUDIO_LOCAL_MB=8192
+RETENCION_DRIVE_MB=4096
+
+# -------------------------
+
+# Estado de primer arranque. TRUE activa el hotspot de configuración inicial
+FIRST_START=TRUE
+
+# -------------------------
+
+# Nombre y contraseña de la red WiFi de configuración
+HOTSPOT_SSID=TectorMini-Setup
+HOTSPOT_PASSWORD=lsdtector123
+
+# -------------------------
+
+# Ubicación geográfica de la estación. Coordenadas decimales
+
+## Latitud. Negativo para hemisferio sur
+LAT=-34.6131
+## Longitud. Negativo para oeste
+LON=-58.3772
+
+# -------------------------
+
+# Opcional. API key de eBird (gratis, ebird.org/api/keygen), usada SOLO
+# como respaldo por scripts/aplicar_ajuste_regional.sh si todavía no hay
+# un archivo de frecuencias ya cargado para esta región en
+# LSDTector-BirdNET-retrain-bsas/frecuencias/. Si se deja vacío, el
+# ajuste regional funciona igual siempre que exista ese archivo; si
+# tampoco existe, el dispositivo sigue con el modelo universal sin
+# ajustar, sin error. Ver advertencia sobre uso comercial de la API de
+# eBird en el propio script antes de usar esto en un dispositivo que se
+# vaya a vender.
+EBIRD_API_KEY=eb07b606-caf6-44a4-92f4-b0b869c4770a

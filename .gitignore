@@ -1,0 +1,10 @@
+# rclone.conf tiene credenciales OAuth reales (client_secret, refresh_token) --
+# NUNCA debe volver a commitearse a este repo, que es publico. Encontrado el
+# 31/08/2026: el token real estuvo commiteado en el repo hermano
+# (LSD-Tector1.1) desde el 23/08, GitHub lo detecto via su programa de
+# partners de secret scanning (Google Cloud es partner), y Google lo revoco
+# solo, silenciosamente, ~1 semana despues -- rompiendo la sincronizacion a
+# Drive sin ningun aviso. Ver config/rclone.conf.ejemplo para la forma del
+# archivo. El archivo real se pone a mano en cada dispositivo, nunca via
+# git/actualizar_repo.sh.
+config/rclone.conf
