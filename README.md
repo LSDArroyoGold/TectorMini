@@ -191,6 +191,13 @@ journalctl -u TectorNET-Pi.service -f     # o: tail -f ~/TectorNET-Pi/motor.log
 `instalar_servicio.sh` también habilita `linger` para el usuario (necesario para que `arecord` vía PulseAudio siga funcionando sin sesión abierta) y registra la rotación de `motor.log`.
 
 > [!NOTE]
+> La regla de logrotate que instala `instalar_servicio.sh` no trae la directiva `su`, así que logrotate se niega a rotar `motor.log` ("parent directory has insecure permissions"). Agregarla a mano una vez:
+> ```bash
+> sudo sed -i 's|^\tcopytruncate|\tcopytruncate\n\tsu lsd lsd|' /etc/logrotate.d/TectorNET-Pi
+> sudo logrotate -d /etc/logrotate.conf 2>&1 | grep -i "error: "   # no debe imprimir nada
+> ```
+
+> [!NOTE]
 > Desde el primer día, `actualizar_tectornet_pi.sh` (cron, 03:23) mantiene TectorNET-Pi al día sin intervención: si el `git pull` trae algo que rompe el servicio, vuelve solo al commit anterior. Para forzarlo: `bash ~/TectorNET-Pi/scripts/actualizar_tectornet_pi.sh`.
 
 ---
