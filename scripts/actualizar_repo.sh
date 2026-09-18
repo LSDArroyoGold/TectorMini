@@ -4,8 +4,8 @@ SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
 BASE_PATH="$(dirname "$SCRIPT_DIR")"
 
 REPO="LSDArroyoGold/TectorMini"
-RAW="https://raw.githubusercontent.com/$REPO/main"
-API="https://api.github.com/repos/$REPO/commits/main"
+RAW="https://raw.githubusercontent.com/$REPO/master"
+API="https://api.github.com/repos/$REPO/commits/master"
 MARCA="$BASE_PATH/.ultima_actualizacion"
 TMP="$BASE_PATH/.actualizar_tmp"
 
