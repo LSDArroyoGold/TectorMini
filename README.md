@@ -16,7 +16,7 @@ Este software fue desarrollado y probado sobre una **Raspberry Pi 4 Model B (2GB
 - Raspberry Pi OS Lite 64-bit (Bookworm o Trixie; probado en Trixie)
 - [TectorNET-Pi](https://github.com/LSDArroyoGold/TectorNET-Pi) (motor de detección, ver paso 8)
 - Python 3 (incluido en Raspberry Pi OS)
-- rclone
+- rclone y ffmpeg — instalados automáticamente por `install.sh`
 - Un micrófono USB
 - nmcli (incluido en Raspberry Pi OS)
 - dnsmasq y util-linux-extra — instalados automáticamente por `install.sh`
@@ -61,7 +61,7 @@ sudo -n true && echo OK
 
 ### 4. Ejecutar el instalador
 
-El script `install.sh` deja el sistema listo en una sola corrida: paquetes del sistema (`dnsmasq`, `util-linux-extra`), permisos de ejecución a los scripts, instala y habilita `hotspot.service`, instala la rotación de logs (`logrotate-tector`), y configura el crontab con las cuatro tareas periódicas. Autodetecta la ubicación del repositorio y el usuario del sistema.
+El script `install.sh` deja el sistema listo en una sola corrida: paquetes del sistema (`dnsmasq`, `util-linux-extra`, `ffmpeg`, `rclone`), permisos de ejecución a los scripts, instala y habilita `hotspot.service`, instala la rotación de logs (`logrotate-tector`), y configura el crontab con las cuatro tareas periódicas. Autodetecta la ubicación del repositorio y el usuario del sistema.
 
 Ejecutarlo desde la raíz del repositorio, sin `sudo` (el script pide permisos de administrador solo donde los necesita):
 
@@ -81,11 +81,7 @@ El crontab debe listar cuatro tareas: `check_button.py` (cada minuto, escucha el
 
 ### 5. rclone
 
-Instalar rclone:
-
-```bash
-sudo apt install rclone
-```
+`install.sh` ya instaló rclone (versión de los repos de Raspberry Pi OS).
 
 **Autenticación con Google Drive**
 
@@ -181,7 +177,7 @@ nano config/config_birdweather.txt        # BIRDWEATHER_ID (token de la estació
 nano config/config_sincronizacion.txt     # DRIVE_PATH = Tector Mini ; DRIVE_SUBCARPETA = Detecciones ; REC_CARD / CHANNELS según el micrófono
 ```
 
-`REC_CARD`/`CHANNELS` dependen del micrófono USB: ver `arecord -l` (con `default`, PulseAudio resuelve la tarjeta).
+`REC_CARD`/`CHANNELS` dependen del micrófono USB. Raspberry Pi OS Lite no trae PulseAudio, así que `default` no sirve: usar el nombre ALSA de la tarjeta (estable entre reinicios, a diferencia del número), por ejemplo `REC_CARD = plughw:CARD=Device,DEV=0` y `CHANNELS = 1` para un micrófono USB mono. `arecord -l` / `arecord -L` lista las tarjetas.
 
 Registrar el servicio, marcar la instalación como lista para autoactualizarse (`actualizar_tectornet_pi.sh` no hace nada sin esa marca) y arrancarlo:
 

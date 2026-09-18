@@ -29,9 +29,10 @@ echo "    Usuario: $REAL_USER"
 echo ""
 
 # --- 1. Paquetes del sistema ---
-echo "==> Paquetes del sistema (dnsmasq, util-linux-extra)"
+echo "==> Paquetes del sistema (dnsmasq, util-linux-extra, ffmpeg, rclone)"
 sudo apt-get update -qq
-sudo apt-get install -y -qq dnsmasq util-linux-extra
+# ffmpeg: TectorNET-Pi guarda cada deteccion como mp3 con el. rclone: subida a Drive.
+sudo apt-get install -y -qq dnsmasq util-linux-extra ffmpeg rclone
 
 # NO habilitar dnsmasq como servicio systemd: hotspot.sh lo mata a mano
 # (pkill dnsmasq) antes de levantar el AP, y NetworkManager lanza su propia
