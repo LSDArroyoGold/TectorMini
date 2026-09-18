@@ -2,28 +2,28 @@
 
 Este repositorio contiene el software de Tector Mini, la variante siempre-encendida (sin ventanas de grabación, sin batería, sin panel solar, sin RTC) del sistema de monitoreo autónomo de aves LSD-Tector, desarrollado en el Laboratorio de Sistemas Dinámicos (LSD), Facultad de Ciencias Exactas y Naturales, Universidad de Buenos Aires.
 
-A diferencia de Tector1/Tector2.0 (que graban solo en ventanas de amanecer/atardecer y se apagan entre medio para ahorrar batería), Tector Mini se alimenta de una fuente de 5V dual diodo-OR'eada (adaptador de pared HLK-10M05 + powerbank USB-C de respaldo) y graba de forma continua, sin ningún ciclo de apagado/encendido programado. El sistema identifica especies mediante BirdNET-Pi y envía detecciones a Google Drive. Para una descripción completa del hardware y el diseño físico del dispositivo, referirse al artículo asociado.
+A diferencia de Tector1/Tector2.0 (que graban solo en ventanas de amanecer/atardecer y se apagan entre medio para ahorrar batería), Tector Mini se alimenta de una fuente de 5V dual diodo-OR'eada (adaptador de pared HLK-10M05 + powerbank USB-C de respaldo) y graba de forma continua, sin ningún ciclo de apagado/encendido programado. El sistema identifica especies con [TectorNET-Pi](https://github.com/LSDArroyoGold/TectorNET-Pi) (motor propio: Perch 2.0 + BirdSet EfficientNetB1, ambos ONNX) y envía cada detección a Google Drive y a BirdWeather. Para una descripción completa del hardware y el diseño físico del dispositivo, referirse al artículo asociado.
 
 Este software fue desarrollado y probado sobre una **Raspberry Pi 4 Model B (2GB RAM)**. No se garantiza compatibilidad con otros modelos o configuraciones de hardware.
 
 > [!NOTE]
-> **Qué se sacó respecto a Tector1/Tector2.0, y por qué.** Tector Mini no tiene ventanas de grabación (`inicio_*.sh`/`cierre_*.sh`), ni corte/reposición de energía (`cortar-alimentacion.service`, latch 74HC74), ni RTC externo DS3231 (`sync-rtc.service`, `set_wake_rtc.py`) ni monitoreo de batería por INA219 (`chequeo_bateria.sh`) — todo eso resuelve un problema (sobrevivir con energía limitada, encendido programado) que no existe en un dispositivo alimentado de forma continua. `install.sh` y `actualizar_repo.sh` tampoco instalan/sincronizan nada de esto. `check_button.py` sí se mantiene, pero simplificado: reconfigurar el WiFi llama a `hotspot.sh --force` directamente (la Pi nunca duerme, no hace falta el reboot que usan Tector1/2 para volver a arrancar en modo hotspot).
+> **Qué se sacó respecto a Tector1/Tector2.0, y por qué.** Tector Mini no tiene ventanas de grabación (`inicio_*.sh`/`cierre_*.sh`), ni corte/reposición de energía (`cortar-alimentacion.service`, latch 74HC74), ni RTC externo DS3231 (`sync-rtc.service`, `set_wake_rtc.py`) ni monitoreo de batería por INA219 (`chequeo_bateria.sh`) — todo eso resuelve un problema (sobrevivir con energía limitada, encendido programado) que no existe en un dispositivo alimentado de forma continua. `install.sh` y `actualizar_repo.sh` tampoco instalan/sincronizan nada de esto. Este repositorio es solo la capa de *dispositivo* (WiFi, botón, retención de disco, autoactualización); el motor de detección vive en el repo TectorNET-Pi, que se instala aparte (paso 8). `check_button.py` sí se mantiene, pero simplificado: reconfigurar el WiFi llama a `hotspot.sh --force` directamente (la Pi nunca duerme, no hace falta el reboot que usan Tector1/2 para volver a arrancar en modo hotspot).
 
 ---
 
 ## Dependencias
 
-- Raspberry Pi OS Lite 64-bit (Bookworm)
-- BirdNET-Pi (ver paso 8; salteable si por ahora solo se quiere probar el software propio de Tector)
-- [LSDTector-BirdNET-retrain-bsas](https://github.com/LSDArroyoGold/LSDTector-BirdNET-retrain-bsas) (clasificador reentrenado, opcional — ver paso 8.5)
+- Raspberry Pi OS Lite 64-bit (Bookworm o Trixie; probado en Trixie)
+- [TectorNET-Pi](https://github.com/LSDArroyoGold/TectorNET-Pi) (motor de detección, ver paso 8)
 - Python 3 (incluido en Raspberry Pi OS)
 - rclone
+- Un micrófono USB
 - nmcli (incluido en Raspberry Pi OS)
 - dnsmasq y util-linux-extra — instalados automáticamente por `install.sh`
 
 ### 1. Sistema operativo
 
-Instalar **Raspberry Pi OS Lite 64-bit (Bookworm)** en la microSD usando [Raspberry Pi Imager](https://www.raspberrypi.com/software/). Durante el proceso de flasheo, en la sección de configuración avanzada del Imager (ícono del engranaje), crear un usuario con nombre y contraseña a elección, y habilitar SSH.
+Instalar **Raspberry Pi OS Lite 64-bit** (Bookworm o Trixie) en la microSD usando [Raspberry Pi Imager](https://www.raspberrypi.com/software/). Durante el proceso de flasheo, en la sección de configuración avanzada del Imager (ícono del engranaje), crear un usuario con nombre y contraseña a elección, y habilitar SSH.
 
 > [!NOTE]
 > Se usa Lite y no Full: el dispositivo corre siempre headless (todo el manejo es por SSH/cron), y el entorno gráfico de Full no aporta nada.
@@ -45,7 +45,7 @@ Los scripts se ejecutan directamente desde el repositorio, respetando su estruct
 ### 3. sudo sin contraseña
 
 > [!IMPORTANT]
-> Este paso no es opcional. Todo el sistema depende de que `cron` pueda ejecutar `sudo` (nmcli, systemctl, etc. en `hotspot.sh`) sin que haya nadie conectado para tipear una contraseña — el dispositivo corre desatendido. También lo exige el instalador oficial de BirdNET-Pi (paso 8), que aborta si no lo detecta.
+> Este paso no es opcional. Todo el sistema depende de que `cron` pueda ejecutar `sudo` (nmcli, systemctl, etc. en `hotspot.sh`) sin que haya nadie conectado para tipear una contraseña — el dispositivo corre desatendido.
 
 ```bash
 echo "$(whoami) ALL=(ALL) NOPASSWD: ALL" | sudo EDITOR="tee" visudo -f /etc/sudoers.d/010-lsd-nopasswd
@@ -77,7 +77,7 @@ sudo systemctl status hotspot.service
 crontab -l
 ```
 
-El crontab debe listar cuatro tareas: `check_button.py` (cada minuto, escucha el botón físico de reconfiguración en GPIO5) y `actualizar_repo.sh`/`actualizar_modelo.sh`/`limpiar_retencion.sh` (una vez al día cada una, de madrugada).
+El crontab debe listar cuatro tareas: `check_button.py` (cada minuto, escucha el botón físico de reconfiguración en GPIO5) y `actualizar_repo.sh` (este repo), `actualizar_tectornet_pi.sh` (del repo TectorNET-Pi: `git pull`, chequeo de salud y rollback automático; no hace nada hasta que TectorNET-Pi esté instalado) y `limpiar_retencion.sh` (una vez al día cada una, de madrugada). Además crea el enlace `~/log_sistema.txt` → `~/TectorMini/log_sistema.txt`, para que las alertas de TectorNET-Pi caigan en el log real de Tector Mini (el que se sube a Drive).
 
 ### 5. rclone
 
@@ -89,7 +89,7 @@ sudo apt install rclone
 
 **Autenticación con Google Drive**
 
-La autenticación con Google requiere un navegador con interfaz gráfica. Como BirdNET-Pi ocupa el navegador de la Raspberry Pi, la autenticación se realiza desde una PC con Windows o Linux como intermediaria.
+La autenticación con Google requiere un navegador con interfaz gráfica, y la Raspberry Pi corre sin entorno gráfico: la autenticación se realiza desde una PC con Windows o Linux como intermediaria. El token es **por dispositivo**: no reutilizar el `rclone.conf` de otro Tector.
 
 **En la PC intermediaria:**
 
@@ -138,7 +138,6 @@ El archivo contiene los siguientes parámetros:
 | `HOTSPOT_SSID` | Nombre de la red WiFi de configuración que emite el dispositivo en el primer arranque, o al presionar el botón físico de reconfiguración. |
 | `HOTSPOT_PASSWORD` | Contraseña de esa red WiFi de configuración. |
 | `LAT` y `LON` | Coordenadas geográficas del lugar de instalación. Pueden dejarse con valores aproximados ya que se actualizan automáticamente mediante geolocalización por IP al utilizar el modo hotspot. |
-| `EBIRD_API_KEY` | Opcional. Ver comentario en el propio archivo. |
 
 > **Importante:** las variables se escriben sin espacios alrededor del signo `=` (formato `CLAVE=valor`). No modificar los nombres de las variables.
 
@@ -158,48 +157,45 @@ Verificar:
 rclone ls "gdrive:Tector Mini/"
 ```
 
-> **Nota:** la subcarpeta `Detecciones` es fija, y las detecciones quedan ahí organizadas en subcarpetas por fecha (heredadas de la estructura que ya usa BirdNET-Pi localmente).
+> **Nota:** la subcarpeta `Detecciones` es fija, y las detecciones quedan ahí organizadas en subcarpetas por fecha (`AAAA-MM-DD/<especie>/`, la misma convención de carpetas localmente en `~/BirdSongs/Extracted/By_Date/`).
 
-Con esto, el software propio de Tector Mini (WiFi, portal de configuración, sincronización con Drive) ya está completamente operativo. Los dos pasos que siguen son sobre BirdNET-Pi, opcionales para llegar a este punto.
+Con esto, la capa de dispositivo de Tector Mini (WiFi, portal de configuración, log en Drive, retención) ya está operativa. El paso que sigue instala el motor de detección.
 
-### 8. BirdNET-Pi
+### 8. TectorNET-Pi (motor de detección)
 
-BirdNET-Pi es el motor de grabación, análisis y extracción de detecciones: Tector Mini no reimplementa nada de eso, se apoya en su pipeline (`birdnet_recording.service` + `birdnet_analysis.service`) y en su convención de carpetas (`BirdSongs/Extracted/By_Date/`), de la que depende directamente `limpiar_retencion.sh`. También se usa su integración nativa con BirdWeather.
-
-> [!NOTE]
-> Si el objetivo inmediato es solo poner en marcha la Raspberry con el software propio de Tector y dejar BirdNET-Pi para después, este paso puede saltearse: nada de los pasos anteriores depende de que esté presente.
-
-> [!NOTE]
-> **Alternativa:** [`TectorNET-Pi`](https://github.com/LSDArroyoGold/TectorNET-Pi) es un motor de grabación y análisis propio, en reemplazo completo de BirdNET-Pi. Usa la misma convención de carpetas y nombre de archivo. Sincroniza a BirdWeather y Drive por detección (no periódico) — ver la sección de sincronización en su propio README.
-
-Desde la terminal de la RP, ejecutar:
+[TectorNET-Pi](https://github.com/LSDArroyoGold/TectorNET-Pi) graba con `arecord`, clasifica con Perch 2.0 (decide) + BirdSet EfficientNetB1 (confirma) usando solo `onnxruntime` (sin TensorFlow ni PyTorch, entra en los 2GB de la Pi 4), y sube cada detección a BirdWeather y a Drive en el momento. Corre como servicio systemd (`TectorNET-Pi.service`, `Restart=always`). Ver su README para el detalle del diseño.
 
 ```bash
-curl -s https://raw.githubusercontent.com/Nachtzuster/BirdNET-Pi/main/newinstaller.sh | bash
+cd ~
+git clone https://github.com/LSDArroyoGold/TectorNET-Pi.git
+cd TectorNET-Pi
+bash instalar.sh            # venv + dependencias + prueba de que el clasificador carga (baja Perch2 de HuggingFace, varios minutos)
 ```
 
-La instalación tarda varios minutos (y necesita `sudo` sin contraseña — ver paso 3). Una vez finalizada, BirdNET-Pi queda corriendo automáticamente y es accesible desde cualquier dispositivo en la misma red ingresando `http://[IP_de_la_RP]` en el navegador. Para obtener la IP de la Raspberry Pi:
+Configuración del dispositivo (ambos archivos son datos del dispositivo y no se versionan):
 
 ```bash
-hostname -I
+cp config/config_birdweather.txt.ejemplo config/config_birdweather.txt
+cp config/config_sincronizacion.txt.ejemplo config/config_sincronizacion.txt
+nano config/config_birdweather.txt        # BIRDWEATHER_ID (token de la estación); LATITUDE/LONGITUDE los completa hotspot.sh solo
+nano config/config_sincronizacion.txt     # DRIVE_PATH = Tector Mini ; DRIVE_SUBCARPETA = Detecciones ; REC_CARD / CHANNELS según el micrófono
 ```
 
-### 8.5. Configurar BirdNET-Pi para uso desatendido, y cargar el modelo reentrenado
+`REC_CARD`/`CHANNELS` dependen del micrófono USB: ver `arecord -l` (con `default`, PulseAudio resuelve la tarjeta).
 
-El script `configurar_birdnet.sh` apaga y enmascara los servicios de dashboard/streaming que no hacen falta en un dispositivo desatendido, arranca en modo consola, configura la gestión de disco, deja `CONFIDENCE`/`SENSITIVITY` en los valores de partida, y de paso pide el token de BirdWeather:
+Registrar el servicio, marcar la instalación como lista para autoactualizarse (`actualizar_tectornet_pi.sh` no hace nada sin esa marca) y arrancarlo:
 
 ```bash
-cd ~/TectorMini
-./scripts/configurar_birdnet.sh
+bash instalar_servicio.sh
+touch ~/.tectornet_pi_migrado
+sudo systemctl start TectorNET-Pi.service
+journalctl -u TectorNET-Pi.service -f     # o: tail -f ~/TectorNET-Pi/motor.log
 ```
 
-Correrlo una sola vez, después de instalar BirdNET-Pi. El token de BirdWeather queda guardado en `birdnet.conf` (fuera de este repositorio, nunca se sube a GitHub).
+`instalar_servicio.sh` también habilita `linger` para el usuario (necesario para que `arecord` vía PulseAudio siga funcionando sin sesión abierta) y registra la rotación de `motor.log`.
 
 > [!NOTE]
-> El modelo reentrenado (las 193 especies locales, además del catálogo global de BirdNET sin modificar) se instala aparte, automáticamente, mediante `actualizar_modelo.sh`: corre una vez al día por cron y actualiza el `.tflite` cada vez que hay una versión nueva en [`LSDTector-BirdNET-retrain-bsas`](https://github.com/LSDArroyoGold/LSDTector-BirdNET-retrain-bsas), sin necesidad de reinstalar nada a mano. Para forzarlo de inmediato: `bash ~/TectorMini/scripts/actualizar_modelo.sh`.
-
-> [!NOTE]
-> Además del modelo universal, `LSDTector-BirdNET-retrain-bsas` permite generar una versión ajustada a la región del dispositivo: a cada una de las 193 especies locales se le suma un sesgo según su frecuencia real de observación en esa región. Corre solo, vía `scripts/aplicar_ajuste_regional.sh` (llamado al final de `actualizar_modelo.sh`, y también desde `hotspot.sh` justo después de geolocalizar), pero necesita el entorno `~/birdnet-v2-env` (`bash instalar.sh` dentro de un clon de `LSDTector-BirdNET-retrain-bsas`). Prioriza un archivo de frecuencias ya descargado a mano y versionado en ese repositorio (sin conexión a eBird desde el dispositivo); si todavía no existe para la región y se cargó `EBIRD_API_KEY`, usa la API pública de eBird como respaldo.
+> Desde el primer día, `actualizar_tectornet_pi.sh` (cron, 03:23) mantiene TectorNET-Pi al día sin intervención: si el `git pull` trae algo que rompe el servicio, vuelve solo al commit anterior. Para forzarlo: `bash ~/TectorNET-Pi/scripts/actualizar_tectornet_pi.sh`.
 
 ---
 
@@ -211,7 +207,7 @@ Correrlo una sola vez, después de instalar BirdNET-Pi. El token de BirdWeather 
 4. Abrir un navegador web y navegar a `http://192.168.4.1:5000`. Se mostrará el portal de configuración.
 5. Seleccionar de la lista la red WiFi a la que se conectará el dispositivo. Ingresar la contraseña correspondiente. Presionar **Conectar**.
 6. El dispositivo se desconecta del modo hotspot e intenta conectarse a la red indicada. Si la conexión es exitosa:
-   - Las coordenadas geográficas se actualizan automáticamente mediante geolocalización por IP (y se propagan a `birdnet.conf` si BirdNET-Pi está instalado).
+   - Las coordenadas geográficas se actualizan automáticamente mediante geolocalización por IP (y se propagan a `config_birdweather.txt` de TectorNET-Pi, si está instalado, reiniciando el servicio).
    - El parámetro `FIRST_START` se cambia a `FALSE`.
 7. Si la conexión falla, la red de configuración vuelve a aparecer automáticamente. Reconectarse y reintentar con las credenciales correctas.
 

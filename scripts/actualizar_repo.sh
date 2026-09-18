@@ -30,7 +30,7 @@ fi
 # config/rclone.conf.ejemplo para la forma del archivo -- el real se pone a
 # mano en cada dispositivo (/home/lsd/.config/rclone/rclone.conf), nunca via
 # git/este script.
-ARCHIVOS="scripts/hotspot.sh scripts/generar_log_reciente.sh scripts/actualizar_repo.sh scripts/actualizar_modelo.sh scripts/aplicar_ajuste_regional.sh scripts/limpiar_retencion.sh scripts/configurar_birdnet.sh python/check_button.py python/log_sistema.py python/portal_configuracion.py systemd/hotspot.service config/logrotate-tector"
+ARCHIVOS="scripts/hotspot.sh scripts/generar_log_reciente.sh scripts/actualizar_repo.sh scripts/limpiar_retencion.sh python/check_button.py python/log_sistema.py python/portal_configuracion.py systemd/hotspot.service config/logrotate-tector"
 
 rm -rf "$TMP"
 mkdir -p "$TMP"

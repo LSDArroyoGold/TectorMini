@@ -104,20 +104,18 @@ LON=$(echo $UBICACION | python3 -c "import sys,json; coords=json.load(sys.stdin)
 sed -i "s/LAT=.*/LAT=$LAT/" "$CONFIG_PATH"
 sed -i "s/LON=.*/LON=$LON/" "$CONFIG_PATH"
 
-# Si BirdNET-Pi esta instalado, propagarle las mismas coordenadas: las usa
-# su modelo de metadata geografica (LATITUDE/LONGITUDE) para priorizar
-# especies plausibles para la region y la epoca del año. Son claves
-# separadas de LAT/LON de este archivo, no la misma variable.
-BIRDNET_CONF="$USER_HOME/BirdNET-Pi/birdnet.conf"
-if [ -f "$BIRDNET_CONF" ]; then
-	sudo sed -i "s/^LATITUDE=.*/LATITUDE=$LAT/" "$BIRDNET_CONF"
-	sudo sed -i "s/^LONGITUDE=.*/LONGITUDE=$LON/" "$BIRDNET_CONF"
+# Si TectorNET-Pi esta instalado, propagarle las mismas coordenadas: las
+# manda a BirdWeather junto con cada deteccion (config_birdweather.txt, claves
+# LATITUDE/LONGITUDE, separadas de LAT/LON de este archivo). El motor relee
+# X="$USER_HOME/TectorNET-Pi/config/config_birdweather.txt"
+if [ -f "$BW_CONF" ]; then
+	sed -i "s/^LATITUDE *=.*/LATITUDE = $LAT/" "$BW_CONF"
+	sed -i "s/^LONGITUDE *=.*/LONGITUDE = $LON/" "$BW_CONF"
+	sudo systemctl restart TectorNET-Pi.service 2>/dev/null
 fi
 
 # Marcar FIRST_START = FALSE
 sed -i 's/FIRST_START=TRUE/FIRST_START=FALSE/' "$CONFIG_PATH"
-
-bash "$BASE_PATH/scripts/aplicar_ajuste_regional.sh"
 
 log "Conectado a $SSID_CONECTADA."
 

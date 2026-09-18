@@ -34,28 +34,6 @@
 	su lsd lsd
 }
 
-# Este SI depende del ambiente (una linea por cada disparo del detector,
-# no solo por deteccion real) -- el 4/9/2026 el labo estaba
-# excepcionalmente ruidoso (gente hablando + mis propias pruebas):
-# 495KB en 5h17m medidos en vivo, ~2.2MB/dia extrapolado, ~800MB/año en
-# ese peor caso. 1G cubre eso con margen incluso si un dia de campo real
-# fuera tan ruidoso como ese -- en la practica, con actividad real de
-# aves en vez de ruido humano continuo, deberia durar bastante mas que
-# un año.
-#
-# Dos rutas para el mismo archivo: el motor propio vive en
-# /home/lsd/TectorNET-Pi (nombre nuevo desde el 7/9/2026) o todavia en
-# /home/lsd/birdnet-lsd (nombre viejo) en un dispositivo que no paso por
-# el renombrado -- "missingok" hace que la ruta que no exista se ignore
-# sin error, asi que esta entrada cubre los dos casos sin duplicar el
-# stanza completo.
-/home/lsd/TectorNET-Pi/motor.log
-/home/lsd/birdnet-lsd/motor.log
-{
-	size 1G
-	rotate 0
-	missingok
-	notifempty
-	copytruncate
-	su lsd lsd
-}
+# motor.log de TectorNET-Pi lo rota su propio instalar_servicio.sh
+# (/etc/logrotate.d/TectorNET-Pi) -- no se repite aca: logrotate se queja
+# de entradas duplicadas para el mismo archivo.

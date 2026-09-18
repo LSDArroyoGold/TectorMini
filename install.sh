@@ -6,9 +6,9 @@
 # permisos, servicios systemd y crontab. Autodetecta la ubicacion del
 # repositorio y el usuario.
 #
-# No instala BirdNET-Pi (instalador propio, opcional, ver README) ni
-# configura rclone (necesita autenticacion interactiva con Google, ver
-# README) -- eso queda aparte a proposito.
+# No instala TectorNET-Pi (repo aparte, ver README) ni configura rclone
+# (necesita autenticacion interactiva con Google, ver README) -- eso queda
+# aparte a proposito.
 #
 # Uso: ./install.sh   (NO con sudo; el script pide sudo donde lo necesita)
 
@@ -72,20 +72,31 @@ echo "==> Configurando crontab para el usuario $REAL_USER"
 # Lineas del crontab, apuntando a las rutas reales del repo. Tector Mini no
 # tiene ventanas amanecer/atardecer (siempre encendido) asi que, a
 # diferencia de Tector1/2, check_button.py es la unica tarea de alta
-# frecuencia -- el resto (repo, modelo, retencion) corre una vez al dia,
+# frecuencia -- el resto (repo, TectorNET-Pi, retencion) corre una vez al dia,
 # alcanza porque no hay urgencia de horario detras de ninguna de las tres.
+# actualizar_tectornet_pi.sh es del repo TectorNET-Pi (git pull + chequeo de
+# salud + rollback); sale solo si TectorNET-Pi todavia no esta instalado.
+TECTORNET_UPDATE="$HOME/TectorNET-Pi/scripts/actualizar_tectornet_pi.sh"
 CRON_LINES="* * * * * python3 $PYTHON_DIR/check_button.py
 17 3 * * * $SCRIPTS_DIR/actualizar_repo.sh
-23 3 * * * $SCRIPTS_DIR/actualizar_modelo.sh
+23 3 * * * $TECTORNET_UPDATE
 41 3 * * * $SCRIPTS_DIR/limpiar_retencion.sh"
 
 # Tomar el crontab actual del usuario (si existe), quitar cualquier linea previa
 # de Tector Mini para no duplicar, y agregar las nuevas.
-CRON_ACTUAL=$(crontab -u "$REAL_USER" -l 2>/dev/null | grep -v "$SCRIPTS_DIR" | grep -v "$PYTHON_DIR/check_button.py" || true)
+CRON_ACTUAL=$(crontab -u "$REAL_USER" -l 2>/dev/null | grep -v "$SCRIPTS_DIR" | grep -v "$PYTHON_DIR/check_button.py" | grep -v "actualizar_tectornet_pi.sh" || true)
 
 printf '%s\n%s\n' "$CRON_ACTUAL" "$CRON_LINES" | grep -v '^$' | crontab -u "$REAL_USER" -
 
 echo "    Crontab configurado con 4 tareas"
+
+# --- 6. Log de sistema en la ruta "plana" ---
+# actualizar_tectornet_pi.sh y motor.py escriben sus alertas a
+# /home/lsd/log_sistema.txt salvo que exista /home/lsd/LSD-Tector2.0 (ver
+# esos scripts). Un symlink hace que caigan en el log real de Tector Mini,
+# el que se sube a Drive.
+touch "$BASE_PATH/log_sistema.txt"
+ln -sfn "$BASE_PATH/log_sistema.txt" "$HOME/log_sistema.txt"
 
 # --- Fin ---
 echo ""

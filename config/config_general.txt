@@ -45,14 +45,3 @@ LAT=-34.6131
 LON=-58.3772
 
 # -------------------------
-
-# Opcional. API key de eBird (gratis, ebird.org/api/keygen), usada SOLO
-# como respaldo por scripts/aplicar_ajuste_regional.sh si todavía no hay
-# un archivo de frecuencias ya cargado para esta región en
-# LSDTector-BirdNET-retrain-bsas/frecuencias/. Si se deja vacío, el
-# ajuste regional funciona igual siempre que exista ese archivo; si
-# tampoco existe, el dispositivo sigue con el modelo universal sin
-# ajustar, sin error. Ver advertencia sobre uso comercial de la API de
-# eBird en el propio script antes de usar esto en un dispositivo que se
-# vaya a vender.
-EBIRD_API_KEY=eb07b606-caf6-44a4-92f4-b0b869c4770a
