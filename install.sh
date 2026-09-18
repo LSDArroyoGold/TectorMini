@@ -81,7 +81,8 @@ TECTORNET_UPDATE="$HOME/TectorNET-Pi/scripts/actualizar_tectornet_pi.sh"
 CRON_LINES="* * * * * python3 $PYTHON_DIR/check_button.py
 17 3 * * * $SCRIPTS_DIR/actualizar_repo.sh
 23 3 * * * $TECTORNET_UPDATE
-41 3 * * * $SCRIPTS_DIR/limpiar_retencion.sh"
+41 3 * * * $SCRIPTS_DIR/limpiar_retencion.sh
+*/10 * * * * $SCRIPTS_DIR/sincronizar_detecciones.sh"
 
 # Tomar el crontab actual del usuario (si existe), quitar cualquier linea previa
 # de Tector Mini para no duplicar, y agregar las nuevas.
@@ -89,7 +90,7 @@ CRON_ACTUAL=$(crontab -u "$REAL_USER" -l 2>/dev/null | grep -v "$SCRIPTS_DIR" | 
 
 printf '%s\n%s\n' "$CRON_ACTUAL" "$CRON_LINES" | grep -v '^$' | crontab -u "$REAL_USER" -
 
-echo "    Crontab configurado con 4 tareas"
+echo "    Crontab configurado con 5 tareas"
 
 # --- 6. Log de sistema en la ruta "plana" ---
 # actualizar_tectornet_pi.sh y motor.py escriben sus alertas a

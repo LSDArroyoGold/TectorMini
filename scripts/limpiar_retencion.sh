@@ -22,6 +22,8 @@ export RCLONE_CONFIG="$USER_HOME/.config/rclone/rclone.conf"
 
 CONFIG_GENERAL="$BASE_PATH/config/config_general.txt"
 DRIVE_PATH=$(awk -F'=' '/^DRIVE_PATH=/{print $2}' "$CONFIG_GENERAL" | tr -d '\r')
+SYNC_REMOTE=$(awk -F'=' '/^SYNC_REMOTE=/{print $2}' "$CONFIG_GENERAL" | tr -d ' \r')
+SYNC_REMOTE="${SYNC_REMOTE:-gdrive}"
 RETENCION_LOCAL_MB=$(awk -F'=' '/^RETENCION_AUDIO_LOCAL_MB=/{print $2}' "$CONFIG_GENERAL" | tr -d ' \r')
 RETENCION_DRIVE_MB=$(awk -F'=' '/^RETENCION_DRIVE_MB=/{print $2}' "$CONFIG_GENERAL" | tr -d ' \r')
 
@@ -47,7 +49,7 @@ fi
 # ---
 if [ -n "$RETENCION_DRIVE_MB" ] && [ -n "$DRIVE_PATH" ]; then
 	CAP_BYTES=$((RETENCION_DRIVE_MB * 1024 * 1024))
-	timeout 60 rclone lsjson -R "gdrive:$DRIVE_PATH/Detecciones" --files-only 2>/dev/null \
+	timeout 60 rclone lsjson -R "$SYNC_REMOTE:$DRIVE_PATH/Detecciones" --files-only 2>/dev/null \
 		| python3 -c "
 import sys, json
 
@@ -72,6 +74,6 @@ for fecha in sorted(por_fecha, reverse=True):
         print(fecha)
 " \
 		| while IFS= read -r FECHA; do
-			timeout 60 rclone purge "gdrive:$DRIVE_PATH/Detecciones/$FECHA" 2>/dev/null
+			timeout 60 rclone purge "$SYNC_REMOTE:$DRIVE_PATH/Detecciones/$FECHA" 2>/dev/null
 		done
 fi

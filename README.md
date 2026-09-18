@@ -77,7 +77,7 @@ sudo systemctl status hotspot.service
 crontab -l
 ```
 
-El crontab debe listar cuatro tareas: `check_button.py` (cada minuto, escucha el botón físico de reconfiguración en GPIO5) y `actualizar_repo.sh` (este repo), `actualizar_tectornet_pi.sh` (del repo TectorNET-Pi: `git pull`, chequeo de salud y rollback automático; no hace nada hasta que TectorNET-Pi esté instalado) y `limpiar_retencion.sh` (una vez al día cada una, de madrugada). Además crea el enlace `~/log_sistema.txt` → `~/TectorMini/log_sistema.txt`, para que las alertas de TectorNET-Pi caigan en el log real de Tector Mini (el que se sube a Drive).
+El crontab debe listar cinco tareas (la quinta, `sincronizar_detecciones.sh`, corre cada 10 minutos y reintenta subir las detecciones de los últimos 7 días que no hayan llegado al servidor): `check_button.py` (cada minuto, escucha el botón físico de reconfiguración en GPIO5) y `actualizar_repo.sh` (este repo), `actualizar_tectornet_pi.sh` (del repo TectorNET-Pi: `git pull`, chequeo de salud y rollback automático; no hace nada hasta que TectorNET-Pi esté instalado) y `limpiar_retencion.sh` (una vez al día cada una, de madrugada). Además crea el enlace `~/log_sistema.txt` → `~/TectorMini/log_sistema.txt`, para que las alertas de TectorNET-Pi caigan en el log real de Tector Mini (el que se sube a Drive).
 
 ### 5. rclone
 
@@ -129,6 +129,7 @@ El archivo contiene los siguientes parámetros:
 | Parámetro | Descripción |
 |---|---|
 | `DRIVE_PATH` | Ruta de la carpeta en Google Drive donde se sincronizan datos y configuración. Puede ser una carpeta en la raíz (ej: `Tector Mini`) o anidada. |
+| `SYNC_REMOTE` | Nombre del remoto de rclone al que se sube todo (log, detecciones, retención). Por defecto `gdrive`; para el servidor propio con SFTP, `servidor` (en ese caso `DRIVE_PATH` es `data`, dentro del chroot). |
 | `RETENCION_AUDIO_LOCAL_MB` / `RETENCION_DRIVE_MB` | Límite de espacio (local y en Drive) antes de que `limpiar_retencion.sh` empiece a borrar carpetas de fecha enteras, empezando por la más vieja. |
 | `FIRST_START` | Mantener en `TRUE` para activar el modo hotspot en el primer arranque. Una vez configurada la red WiFi exitosamente, el sistema lo cambia automáticamente a `FALSE`. Si el WiFi ya se configuró a mano (por ejemplo por SSH directo), poner en `FALSE` para no disparar el portal de configuración en el próximo arranque. |
 | `HOTSPOT_SSID` | Nombre de la red WiFi de configuración que emite el dispositivo en el primer arranque, o al presionar el botón físico de reconfiguración. |
