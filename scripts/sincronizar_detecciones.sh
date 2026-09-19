@@ -5,7 +5,7 @@
 # (sin red, servidor caido), no reintenta. Como "rclone copy" solo transfiere
 # lo que falta en destino, alcanza con volver a copiar cada 10 minutos lo de
 # los ultimos 7 dias; lo ya subido se saltea sin costo. Corre por cron.
-# Destino = SYNC_REMOTE:DRIVE_PATH/Detecciones (config/config_general.txt).
+# Destino = SYNC_REMOTE:SYNC_PATH/Detecciones (config/config_general.txt).
 
 SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
 BASE_PATH="$(dirname "$SCRIPT_DIR")"
@@ -16,12 +16,12 @@ export RCLONE_CONFIG="$USER_HOME/.config/rclone/rclone.conf"
 export HOME="$USER_HOME"
 
 CONFIG_GENERAL="$BASE_PATH/config/config_general.txt"
-DRIVE_PATH=$(awk -F'=' '/^DRIVE_PATH=/{print $2}' "$CONFIG_GENERAL" | tr -d '\r')
+SYNC_PATH=$(awk -F'=' '/^SYNC_PATH=/{print $2}' "$CONFIG_GENERAL" | tr -d '\r')
 SYNC_REMOTE=$(awk -F'=' '/^SYNC_REMOTE=/{print $2}' "$CONFIG_GENERAL" | tr -d ' \r')
 SYNC_REMOTE="${SYNC_REMOTE:-servidor}"
 
-[ -n "$DRIVE_PATH" ] || exit 0
+[ -n "$SYNC_PATH" ] || exit 0
 
 flock -n /tmp/sincronizar_detecciones.lock \
-	timeout 600 rclone copy "$USER_HOME/BirdSongs/Extracted/By_Date/" "$SYNC_REMOTE:$DRIVE_PATH/Detecciones/" \
+	timeout 600 rclone copy "$USER_HOME/BirdSongs/Extracted/By_Date/" "$SYNC_REMOTE:$SYNC_PATH/Detecciones/" \
 	--max-age 7d --min-age 1m --transfers 2 --contimeout 20s --timeout 60s --retries 2 2>/dev/null

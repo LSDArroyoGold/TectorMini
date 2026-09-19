@@ -37,7 +37,7 @@ export HOME="$USER_HOME"
 LOG_PATH="$BASE_PATH/log_sistema.txt"
 CONFIG_PATH="$BASE_PATH/config/config_general.txt"
 
-DRIVE_PATH=$(awk -F'=' '/^DRIVE_PATH=/{print $2}' "$CONFIG_PATH" | tr -d '\r')
+SYNC_PATH=$(awk -F'=' '/^SYNC_PATH=/{print $2}' "$CONFIG_PATH" | tr -d '\r')
 SYNC_REMOTE=$(awk -F'=' '/^SYNC_REMOTE=/{print $2}' "$CONFIG_PATH" | tr -d ' \r')
 SYNC_REMOTE="${SYNC_REMOTE:-servidor}"
 HOTSPOT_SSID=$(awk -F'=' '/^HOTSPOT_SSID=/{print $2}' "$CONFIG_PATH" | tr -d '\r')
@@ -122,7 +122,7 @@ sed -i 's/FIRST_START=TRUE/FIRST_START=FALSE/' "$CONFIG_PATH"
 log "Conectado a $SSID_CONECTADA."
 
 # Subir log al remoto de sincronizacion
-rclone copy "$LOG_PATH" "$SYNC_REMOTE:$DRIVE_PATH/"
+rclone copy "$LOG_PATH" "$SYNC_REMOTE:$SYNC_PATH/"
 bash "$BASE_PATH/scripts/generar_log_reciente.sh"
 
 sudo chown "$REAL_USER:$REAL_USER" "$USER_HOME/.config/rclone/rclone.conf"

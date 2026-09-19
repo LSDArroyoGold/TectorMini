@@ -168,7 +168,7 @@ HTML_ESPERA = f"""<!DOCTYPE html>
     <p>Las credenciales fueron enviadas al dispositivo. El proceso puede tardar hasta 1 minuto.</p>
     <p>Para verificar el resultado:</p>
     <p>✅ Si la conexión fue <strong>exitosa</strong>: el archivo <strong>log_sistema.txt</strong>
-    en Google Drive mostrará una entrada de conexión exitosa y el dispositivo se apagará automáticamente.</p>
+    en el servidor mostrará una entrada de conexión exitosa y el dispositivo se apagará automáticamente.</p>
     <p>📶 Si la conexión <strong>falló</strong>: el hotspot <strong>{HOTSPOT_SSID}</strong>
     volverá a aparecer en tu lista de redes WiFi. Volvé a conectarte y reintentá.</p>
 </body>

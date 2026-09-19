@@ -14,7 +14,7 @@ Este software fue desarrollado y probado sobre una **Raspberry Pi 4 Model B (2GB
 ## Dependencias
 
 - Raspberry Pi OS Lite 64-bit (Bookworm o Trixie; probado en Trixie)
-- [TectorNET-Pi](https://github.com/LSDArroyoGold/TectorNET-Pi) (motor de detección, ver paso 8)
+- TectorNET-Pi (motor de detección, ver paso 8)
 - Python 3 (incluido en Raspberry Pi OS)
 - rclone y ffmpeg — instalados automáticamente por `install.sh`
 - Un micrófono USB
@@ -34,6 +34,8 @@ Instalar **Raspberry Pi OS Lite 64-bit** (Bookworm o Trixie) en la microSD usand
 Una vez flasheada la microSD, insertarla en la Raspberry Pi y encenderla.
 
 ### 2. Clonar el repositorio
+
+Repositorio privado (hace falta acceso a la organización LSDArroyoGold).
 
 ```bash
 cd ~
@@ -77,7 +79,7 @@ sudo systemctl status hotspot.service
 crontab -l
 ```
 
-El crontab debe listar cinco tareas (la quinta, `sincronizar_detecciones.sh`, corre cada 10 minutos y reintenta subir las detecciones de los últimos 7 días que no hayan llegado al servidor): `check_button.py` (cada minuto, escucha el botón físico de reconfiguración en GPIO5) y `actualizar_repo.sh` (este repo), `actualizar_tectornet_pi.sh` (del repo TectorNET-Pi: `git pull`, chequeo de salud y rollback automático; no hace nada hasta que TectorNET-Pi esté instalado) y `limpiar_retencion.sh` (una vez al día cada una, de madrugada). Además crea el enlace `~/log_sistema.txt` → `~/TectorMini/log_sistema.txt`, para que las alertas de TectorNET-Pi caigan en el log real de Tector Mini (el que se sube al servidor).
+El crontab debe listar cinco tareas (la quinta, `sincronizar_detecciones.sh`, corre cada 10 minutos y reintenta subir las detecciones de los últimos 7 días que no hayan llegado al servidor): `check_button.py` (cada minuto, escucha el botón físico de reconfiguración en GPIO5) y `actualizar_repo.sh` (este repo; cada 15 minutos, barato: si el servidor no tiene un commit nuevo en `stable`, no hace nada), `actualizar_tectornet_pi.sh` (del repo TectorNET-Pi: `git fetch` desde el servidor, chequeo de salud y rollback automático; no hace nada hasta que TectorNET-Pi esté instalado) y `limpiar_retencion.sh` (estas dos una vez al día, de madrugada). Además crea el enlace `~/log_sistema.txt` → `~/TectorMini/log_sistema.txt`, para que las alertas de TectorNET-Pi caigan en el log real de Tector Mini (el que se sube al servidor).
 
 ### 5. rclone
 
@@ -89,7 +91,7 @@ Tector Mini sube todo al servidor propio del LSD-Tector (`tectorserver`) por SFT
 
 ```bash
 ssh-keygen -t ed25519 -N "" -f ~/.ssh/id_ed25519_servidor
-cat ~/.ssh/id_ed25519_servidor.pub          # agregarla en el servidor: /etc/ssh/tector_keys/tectormini
+cat ~/.ssh/id_ed25519_servidor.pub          # agregarla en el servidor: /etc/ssh/tector_keys/tectormini y /srv/git/.ssh/authorized_keys (ver TectorHub-v2/docs/servicio-git.md)
 ssh-keyscan 100.83.125.103 >> ~/.ssh/known_hosts
 mkdir -p ~/.config/rclone
 cp ~/TectorMini/config/rclone.conf.ejemplo ~/.config/rclone/rclone.conf && chmod 600 ~/.config/rclone/rclone.conf
@@ -110,7 +112,7 @@ El archivo contiene los siguientes parámetros:
 
 | Parámetro | Descripción |
 |---|---|
-| `DRIVE_PATH` | Carpeta del servidor donde se sincronizan datos y logs (nombre histórico). Siempre `data`, dentro del chroot del usuario SFTP. |
+| `SYNC_PATH` | Carpeta del servidor donde se sincronizan datos y logs. Siempre `data`, dentro del chroot del usuario SFTP. |
 | `SYNC_REMOTE` | Nombre del remoto de rclone al que se sube todo (log, detecciones, retención). Por defecto `servidor`. |
 | `RETENCION_AUDIO_LOCAL_MB` | Límite de espacio local antes de que `limpiar_retencion.sh` empiece a borrar carpetas de fecha enteras, empezando por la más vieja. El tope en el servidor lo maneja el propio servidor. |
 | `FIRST_START` | Mantener en `TRUE` para activar el modo hotspot en el primer arranque. Una vez configurada la red WiFi exitosamente, el sistema lo cambia automáticamente a `FALSE`. Si el WiFi ya se configuró a mano (por ejemplo por SSH directo), poner en `FALSE` para no disparar el portal de configuración en el próximo arranque. |
@@ -122,7 +124,7 @@ El archivo contiene los siguientes parámetros:
 
 ### 7. Verificar el destino en el servidor
 
-Con `DRIVE_PATH=data` y `SYNC_REMOTE=servidor`, las carpetas se crean solas en la primera subida. Verificar la conexión:
+Con `SYNC_PATH=data` y `SYNC_REMOTE=servidor`, las carpetas se crean solas en la primera subida. Verificar la conexión:
 
 ```bash
 rclone lsd servidor:data
@@ -134,11 +136,11 @@ Con esto, la capa de dispositivo de Tector Mini (WiFi, portal de configuración,
 
 ### 8. TectorNET-Pi (motor de detección)
 
-[TectorNET-Pi](https://github.com/LSDArroyoGold/TectorNET-Pi) graba con `arecord`, clasifica con Perch 2.0 (decide) + BirdSet EfficientNetB1 (confirma) usando solo `onnxruntime` (sin TensorFlow ni PyTorch, entra en los 2GB de la Pi 4), y sube cada detección a BirdWeather y al servidor en el momento. Corre como servicio systemd (`TectorNET-Pi.service`, `Restart=always`). Ver su README para el detalle del diseño.
+TectorNET-Pi graba con `arecord`, clasifica con Perch 2.0 (decide) + BirdSet EfficientNetB1 (confirma) usando solo `onnxruntime` (sin TensorFlow ni PyTorch, entra en los 2GB de la Pi 4), y sube cada detección a BirdWeather y al servidor en el momento. Corre como servicio systemd (`TectorNET-Pi.service`, `Restart=always`). Ver su README para el detalle del diseño.
 
 ```bash
 cd ~
-git clone https://github.com/LSDArroyoGold/TectorNET-Pi.git
+git clone -b stable tectorgit@100.83.125.103:tectornet-pi.git TectorNET-Pi
 cd TectorNET-Pi
 bash instalar.sh            # venv + dependencias + prueba de que el clasificador carga (baja Perch2 de HuggingFace, varios minutos)
 ```

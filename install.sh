@@ -79,7 +79,7 @@ echo "==> Configurando crontab para el usuario $REAL_USER"
 # salud + rollback); sale solo si TectorNET-Pi todavia no esta instalado.
 TECTORNET_UPDATE="$HOME/TectorNET-Pi/scripts/actualizar_tectornet_pi.sh"
 CRON_LINES="* * * * * python3 $PYTHON_DIR/check_button.py
-17 3 * * * $SCRIPTS_DIR/actualizar_repo.sh
+*/15 * * * * $SCRIPTS_DIR/actualizar_repo.sh
 23 3 * * * $TECTORNET_UPDATE
 41 3 * * * $SCRIPTS_DIR/limpiar_retencion.sh
 */10 * * * * $SCRIPTS_DIR/sincronizar_detecciones.sh"

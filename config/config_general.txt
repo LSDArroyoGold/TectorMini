@@ -7,10 +7,10 @@
 
 # Destino: el servidor propio del LSD-Tector por SFTP (ver
 # config/rclone.conf.ejemplo). SYNC_REMOTE es el nombre de la seccion de
-# rclone.conf; DRIVE_PATH (nombre historico) es la carpeta dentro del
-# chroot del usuario SFTP: siempre "data".
+# rclone.conf; SYNC_PATH es la carpeta dentro del chroot del usuario SFTP:
+# siempre "data".
 SYNC_REMOTE=servidor
-DRIVE_PATH=data
+SYNC_PATH=data
 
 # -------------------------
 
