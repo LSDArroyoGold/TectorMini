@@ -39,7 +39,7 @@ CONFIG_PATH="$BASE_PATH/config/config_general.txt"
 
 DRIVE_PATH=$(awk -F'=' '/^DRIVE_PATH=/{print $2}' "$CONFIG_PATH" | tr -d '\r')
 SYNC_REMOTE=$(awk -F'=' '/^SYNC_REMOTE=/{print $2}' "$CONFIG_PATH" | tr -d ' \r')
-SYNC_REMOTE="${SYNC_REMOTE:-gdrive}"
+SYNC_REMOTE="${SYNC_REMOTE:-servidor}"
 HOTSPOT_SSID=$(awk -F'=' '/^HOTSPOT_SSID=/{print $2}' "$CONFIG_PATH" | tr -d '\r')
 HOTSPOT_PASSWORD=$(awk -F'=' '/^HOTSPOT_PASSWORD=/{print $2}' "$CONFIG_PATH" | tr -d '\r')
 

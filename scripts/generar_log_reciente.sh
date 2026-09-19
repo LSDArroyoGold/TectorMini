@@ -12,7 +12,7 @@ export HOME="$USER_HOME"
 CONFIG_GENERAL="$BASE_PATH/config/config_general.txt"
 DRIVE_PATH=$(awk -F'=' '/^DRIVE_PATH=/{print $2}' "$CONFIG_GENERAL" | tr -d '\r')
 SYNC_REMOTE=$(awk -F'=' '/^SYNC_REMOTE=/{print $2}' "$CONFIG_GENERAL" | tr -d ' \r')
-SYNC_REMOTE="${SYNC_REMOTE:-gdrive}"
+SYNC_REMOTE="${SYNC_REMOTE:-servidor}"
 
 HOY=$(date +%Y-%m-%d)
 AYER=$(date -d "yesterday" +%Y-%m-%d)

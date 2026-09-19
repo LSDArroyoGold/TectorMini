@@ -2,7 +2,7 @@
 
 Este repositorio contiene el software de Tector Mini, la variante siempre-encendida (sin ventanas de grabación, sin batería, sin panel solar, sin RTC) del sistema de monitoreo autónomo de aves LSD-Tector, desarrollado en el Laboratorio de Sistemas Dinámicos (LSD), Facultad de Ciencias Exactas y Naturales, Universidad de Buenos Aires.
 
-A diferencia de Tector1/Tector2.0 (que graban solo en ventanas de amanecer/atardecer y se apagan entre medio para ahorrar batería), Tector Mini se alimenta de una fuente de 5V dual diodo-OR'eada (adaptador de pared HLK-10M05 + powerbank USB-C de respaldo) y graba de forma continua, sin ningún ciclo de apagado/encendido programado. El sistema identifica especies con [TectorNET-Pi](https://github.com/LSDArroyoGold/TectorNET-Pi) (motor propio: Perch 2.0 + BirdSet EfficientNetB1, ambos ONNX) y envía cada detección a Google Drive y a BirdWeather. Para una descripción completa del hardware y el diseño físico del dispositivo, referirse al artículo asociado.
+A diferencia de Tector1/Tector2.0 (que graban solo en ventanas de amanecer/atardecer y se apagan entre medio para ahorrar batería), Tector Mini se alimenta de una fuente de 5V dual diodo-OR'eada (adaptador de pared HLK-10M05 + powerbank USB-C de respaldo) y graba de forma continua, sin ningún ciclo de apagado/encendido programado. El sistema identifica especies con [TectorNET-Pi](https://github.com/LSDArroyoGold/TectorNET-Pi) (motor propio: Perch 2.0 + BirdSet EfficientNetB1, ambos ONNX) y envía cada detección al servidor propio del LSD-Tector y a BirdWeather. Para una descripción completa del hardware y el diseño físico del dispositivo, referirse al artículo asociado.
 
 Este software fue desarrollado y probado sobre una **Raspberry Pi 4 Model B (2GB RAM)**. No se garantiza compatibilidad con otros modelos o configuraciones de hardware.
 
@@ -77,44 +77,26 @@ sudo systemctl status hotspot.service
 crontab -l
 ```
 
-El crontab debe listar cinco tareas (la quinta, `sincronizar_detecciones.sh`, corre cada 10 minutos y reintenta subir las detecciones de los últimos 7 días que no hayan llegado al servidor): `check_button.py` (cada minuto, escucha el botón físico de reconfiguración en GPIO5) y `actualizar_repo.sh` (este repo), `actualizar_tectornet_pi.sh` (del repo TectorNET-Pi: `git pull`, chequeo de salud y rollback automático; no hace nada hasta que TectorNET-Pi esté instalado) y `limpiar_retencion.sh` (una vez al día cada una, de madrugada). Además crea el enlace `~/log_sistema.txt` → `~/TectorMini/log_sistema.txt`, para que las alertas de TectorNET-Pi caigan en el log real de Tector Mini (el que se sube a Drive).
+El crontab debe listar cinco tareas (la quinta, `sincronizar_detecciones.sh`, corre cada 10 minutos y reintenta subir las detecciones de los últimos 7 días que no hayan llegado al servidor): `check_button.py` (cada minuto, escucha el botón físico de reconfiguración en GPIO5) y `actualizar_repo.sh` (este repo), `actualizar_tectornet_pi.sh` (del repo TectorNET-Pi: `git pull`, chequeo de salud y rollback automático; no hace nada hasta que TectorNET-Pi esté instalado) y `limpiar_retencion.sh` (una vez al día cada una, de madrugada). Además crea el enlace `~/log_sistema.txt` → `~/TectorMini/log_sistema.txt`, para que las alertas de TectorNET-Pi caigan en el log real de Tector Mini (el que se sube al servidor).
 
 ### 5. rclone
 
 `install.sh` ya instaló rclone (versión de los repos de Raspberry Pi OS).
 
-**Autenticación con Google Drive**
+**Conexión al servidor (SFTP)**
 
-La autenticación con Google requiere un navegador con interfaz gráfica, y la Raspberry Pi corre sin entorno gráfico: la autenticación se realiza desde una PC con Windows o Linux como intermediaria. El token es **por dispositivo**: no reutilizar el `rclone.conf` de otro Tector.
-
-**En la PC intermediaria:**
-
-1. Descargar rclone para el sistema operativo correspondiente desde [https://rclone.org/downloads/](https://rclone.org/downloads/)
-2. Descomprimir el archivo
-3. Abrir una terminal (PowerShell en Windows) en la carpeta donde se descomprimió rclone
-4. Ejecutar el siguiente comando:
+Tector Mini sube todo al servidor propio del LSD-Tector (`tectorserver`) por SFTP, con su propio usuario enjaulado (`tectormini`, solo escribe en `data/`) y una clave SSH por dispositivo. No hay tokens que venzan. Los pasos de alta están en `config/rclone.conf.ejemplo`; en resumen:
 
 ```bash
-.\rclone.exe authorize "drive" --drive-scope drive.file
-```
-
-> **Nota:** en Linux o macOS el comando es `./rclone authorize "drive" --drive-scope drive.file`. El flag `--drive-scope drive.file` es imprescindible — sin él, rclone pide el scope completo (`drive`), que Google clasifica como "restringido" y cuyo refresh token caduca cada 7 días sin verificación adicional. Ver `config/rclone.conf.ejemplo` para el detalle completo de este problema y su solución.
-
-5. El navegador se abrirá automáticamente. Iniciar sesión con la cuenta de Google deseada y otorgar los permisos solicitados.
-6. La terminal mostrará un token JSON entre llaves (`{...}`). Copiar el token completo, incluyendo las llaves.
-
-**En la Raspberry Pi:**
-
-Copiar `config/rclone.conf.ejemplo` a `~/.config/rclone/rclone.conf`, completar `client_id`, `client_secret` y `token` con los valores obtenidos, y verificar la conexión:
-
-```bash
+ssh-keygen -t ed25519 -N "" -f ~/.ssh/id_ed25519_servidor
+cat ~/.ssh/id_ed25519_servidor.pub          # agregarla en el servidor: /etc/ssh/tector_keys/tectormini
+ssh-keyscan 100.83.125.103 >> ~/.ssh/known_hosts
 mkdir -p ~/.config/rclone
-cp ~/TectorMini/config/rclone.conf.ejemplo ~/.config/rclone/rclone.conf
-nano ~/.config/rclone/rclone.conf
-rclone lsd gdrive:
+cp ~/TectorMini/config/rclone.conf.ejemplo ~/.config/rclone/rclone.conf && chmod 600 ~/.config/rclone/rclone.conf
+rclone lsd servidor:data
 ```
 
-Si el comando devuelve la lista de carpetas existentes en la cuenta de Google, la configuración fue exitosa.
+Si el último comando lista las carpetas de `data/`, la configuración fue exitosa. La clave privada nunca sale del dispositivo.
 
 ### 6. Archivo de configuración
 
@@ -128,9 +110,9 @@ El archivo contiene los siguientes parámetros:
 
 | Parámetro | Descripción |
 |---|---|
-| `DRIVE_PATH` | Ruta de la carpeta en Google Drive donde se sincronizan datos y configuración. Puede ser una carpeta en la raíz (ej: `Tector Mini`) o anidada. |
-| `SYNC_REMOTE` | Nombre del remoto de rclone al que se sube todo (log, detecciones, retención). Por defecto `gdrive`; para el servidor propio con SFTP, `servidor` (en ese caso `DRIVE_PATH` es `data`, dentro del chroot). |
-| `RETENCION_AUDIO_LOCAL_MB` / `RETENCION_DRIVE_MB` | Límite de espacio (local y en Drive) antes de que `limpiar_retencion.sh` empiece a borrar carpetas de fecha enteras, empezando por la más vieja. |
+| `DRIVE_PATH` | Carpeta del servidor donde se sincronizan datos y logs (nombre histórico). Siempre `data`, dentro del chroot del usuario SFTP. |
+| `SYNC_REMOTE` | Nombre del remoto de rclone al que se sube todo (log, detecciones, retención). Por defecto `servidor`. |
+| `RETENCION_AUDIO_LOCAL_MB` | Límite de espacio local antes de que `limpiar_retencion.sh` empiece a borrar carpetas de fecha enteras, empezando por la más vieja. El tope en el servidor lo maneja el propio servidor. |
 | `FIRST_START` | Mantener en `TRUE` para activar el modo hotspot en el primer arranque. Una vez configurada la red WiFi exitosamente, el sistema lo cambia automáticamente a `FALSE`. Si el WiFi ya se configuró a mano (por ejemplo por SSH directo), poner en `FALSE` para no disparar el portal de configuración en el próximo arranque. |
 | `HOTSPOT_SSID` | Nombre de la red WiFi de configuración que emite el dispositivo en el primer arranque, o al presionar el botón físico de reconfiguración. |
 | `HOTSPOT_PASSWORD` | Contraseña de esa red WiFi de configuración. |
@@ -138,29 +120,21 @@ El archivo contiene los siguientes parámetros:
 
 > **Importante:** las variables se escriben sin espacios alrededor del signo `=` (formato `CLAVE=valor`). No modificar los nombres de las variables.
 
-### 7. Crear carpeta en Google Drive y subir la configuración inicial
+### 7. Verificar el destino en el servidor
 
-Usando la ruta definida en `DRIVE_PATH` (en los ejemplos siguientes se asume `DRIVE_PATH=Tector Mini`):
-
-```bash
-rclone mkdir "gdrive:Tector Mini"
-rclone mkdir "gdrive:Tector Mini/Detecciones"
-rclone copy ~/TectorMini/config/config_general.txt "gdrive:Tector Mini/"
-```
-
-Verificar:
+Con `DRIVE_PATH=data` y `SYNC_REMOTE=servidor`, las carpetas se crean solas en la primera subida. Verificar la conexión:
 
 ```bash
-rclone ls "gdrive:Tector Mini/"
+rclone lsd servidor:data
 ```
 
 > **Nota:** la subcarpeta `Detecciones` es fija, y las detecciones quedan ahí organizadas en subcarpetas por fecha (`AAAA-MM-DD/<especie>/`, la misma convención de carpetas localmente en `~/BirdSongs/Extracted/By_Date/`).
 
-Con esto, la capa de dispositivo de Tector Mini (WiFi, portal de configuración, log en Drive, retención) ya está operativa. El paso que sigue instala el motor de detección.
+Con esto, la capa de dispositivo de Tector Mini (WiFi, portal de configuración, log en el servidor, retención) ya está operativa. El paso que sigue instala el motor de detección.
 
 ### 8. TectorNET-Pi (motor de detección)
 
-[TectorNET-Pi](https://github.com/LSDArroyoGold/TectorNET-Pi) graba con `arecord`, clasifica con Perch 2.0 (decide) + BirdSet EfficientNetB1 (confirma) usando solo `onnxruntime` (sin TensorFlow ni PyTorch, entra en los 2GB de la Pi 4), y sube cada detección a BirdWeather y a Drive en el momento. Corre como servicio systemd (`TectorNET-Pi.service`, `Restart=always`). Ver su README para el detalle del diseño.
+[TectorNET-Pi](https://github.com/LSDArroyoGold/TectorNET-Pi) graba con `arecord`, clasifica con Perch 2.0 (decide) + BirdSet EfficientNetB1 (confirma) usando solo `onnxruntime` (sin TensorFlow ni PyTorch, entra en los 2GB de la Pi 4), y sube cada detección a BirdWeather y al servidor en el momento. Corre como servicio systemd (`TectorNET-Pi.service`, `Restart=always`). Ver su README para el detalle del diseño.
 
 ```bash
 cd ~
@@ -175,7 +149,7 @@ Configuración del dispositivo (ambos archivos son datos del dispositivo y no se
 cp config/config_birdweather.txt.ejemplo config/config_birdweather.txt
 cp config/config_sincronizacion.txt.ejemplo config/config_sincronizacion.txt
 nano config/config_birdweather.txt        # BIRDWEATHER_ID (token de la estación); LATITUDE/LONGITUDE los completa hotspot.sh solo
-nano config/config_sincronizacion.txt     # DRIVE_PATH = Tector Mini ; DRIVE_SUBCARPETA = Detecciones ; REC_CARD / CHANNELS según el micrófono
+nano config/config_sincronizacion.txt     # DRIVE_REMOTE = servidor ; DRIVE_PATH = data ; DRIVE_SUBCARPETA = Detecciones ; REC_CARD / CHANNELS según el micrófono
 ```
 
 `REC_CARD`/`CHANNELS` dependen del micrófono USB. Raspberry Pi OS Lite no trae PulseAudio, así que `default` no sirve: usar el nombre ALSA de la tarjeta (estable entre reinicios, a diferencia del número), por ejemplo `REC_CARD = plughw:CARD=Device,DEV=0` y `CHANNELS = 1` para un micrófono USB mono. `arecord -l` / `arecord -L` lista las tarjetas.
@@ -226,8 +200,6 @@ Si hace falta cambiar de red WiFi después del primer arranque (sin acceso SSH a
 
 ---
 
-## Control remoto via Google Drive
+## Monitoreo remoto
 
-Una vez el dispositivo está en operación, el archivo `config_general.txt` en la carpeta de Google Drive definida por `DRIVE_PATH` puede editarse desde cualquier lugar. Los cambios se aplican la próxima vez que corre `hotspot.sh` (primer arranque o botón de reconfiguración) o el cron diario correspondiente, según el parámetro.
-
-El archivo `log_sistema.txt` se sube a Drive cada vez que corre `hotspot.sh` con conexión exitosa, y permite monitorear el estado del dispositivo de forma remota.
+`log_sistema.txt` y `log_reciente.txt` se suben al servidor (`data/`) cada vez que corre `hotspot.sh` con conexión exitosa o `generar_log_reciente.sh`, y permiten monitorear el estado del dispositivo de forma remota (también desde el Hub).

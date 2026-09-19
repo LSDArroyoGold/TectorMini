@@ -7,7 +7,7 @@
 # repositorio y el usuario.
 #
 # No instala TectorNET-Pi (repo aparte, ver README) ni configura rclone
-# (necesita autenticacion interactiva con Google, ver README) -- eso queda
+# (necesita generar una clave SSH y darla de alta en el servidor, ver README)
 # aparte a proposito.
 #
 # Uso: ./install.sh   (NO con sudo; el script pide sudo donde lo necesita)
@@ -31,7 +31,7 @@ echo ""
 # --- 1. Paquetes del sistema ---
 echo "==> Paquetes del sistema (dnsmasq, util-linux-extra, ffmpeg, rclone)"
 sudo apt-get update -qq
-# ffmpeg: TectorNET-Pi guarda cada deteccion como mp3 con el. rclone: subida a Drive.
+# ffmpeg: TectorNET-Pi guarda cada deteccion como mp3 con el. rclone: subida al servidor.
 sudo apt-get install -y -qq dnsmasq util-linux-extra ffmpeg rclone
 
 # NO habilitar dnsmasq como servicio systemd: hotspot.sh lo mata a mano
@@ -96,7 +96,7 @@ echo "    Crontab configurado con 5 tareas"
 # actualizar_tectornet_pi.sh y motor.py escriben sus alertas a
 # /home/lsd/log_sistema.txt salvo que exista /home/lsd/LSD-Tector2.0 (ver
 # esos scripts). Un symlink hace que caigan en el log real de Tector Mini,
-# el que se sube a Drive.
+# el que se sube al servidor.
 touch "$BASE_PATH/log_sistema.txt"
 ln -sfn "$BASE_PATH/log_sistema.txt" "$HOME/log_sistema.txt"
 
