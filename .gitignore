@@ -4,3 +4,8 @@
 config/rclone.conf
 __pycache__/
 *.pyc
+
+# Estado local del dispositivo (lo genera actualizar_repo.sh / los scripts)
+.software.git/
+.ultima_actualizacion*
+log_*.txt
