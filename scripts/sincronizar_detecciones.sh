@@ -33,7 +33,7 @@ TEMP=$(awk '{printf "%.1f", $1/1000}' /sys/class/thermal/thermal_zone0/temp 2>/d
 THROTTLED=$(vcgencmd get_throttled 2>/dev/null | cut -d= -f2)
 VERSION=$(cut -c1-7 "$BASE_PATH/.ultima_actualizacion" 2>/dev/null)
 ESTADO_TMP=$(mktemp)
-printf '{"version_formato":1,"serie":"0003","generado":"%s","estado":"en_linea","detecciones_hoy":%s,"temp_cpu_c":%s,"throttled":"%s","version_software":"%s","drive_path":"%s"}\n' \
+printf '{"version_formato":1,"serie":"0003","generado":"%s","estado":"en_linea","detecciones_hoy":%s,"temp_cpu_c":%s,"throttled":"%s","version_software":"%s","carpeta":"%s"}\n' \
 	"$(date +%Y-%m-%dT%H:%M:%S)" "$DETECCIONES_HOY" "${TEMP:-null}" "${THROTTLED:-0x0}" "$VERSION" "$SYNC_PATH" > "$ESTADO_TMP"
 timeout 60 rclone copyto "$ESTADO_TMP" "$SYNC_REMOTE:$SYNC_PATH/estado.json" --contimeout 20s --timeout 30s 2>/dev/null
 rm -f "$ESTADO_TMP"
