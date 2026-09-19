@@ -34,6 +34,18 @@
 	su lsd lsd
 }
 
+# log_salud.txt (sincronizar_detecciones.sh cada 10 min = 144 filas/dia,
+# cadencia fija). ~38 bytes/fila -> ~5.5KB/dia -> ~2MB/año. 3M da ~1.5 años.
+/home/lsd/TectorMini/log_salud.txt
+{
+	size 3M
+	rotate 0
+	missingok
+	notifempty
+	copytruncate
+	su lsd lsd
+}
+
 # motor.log de TectorNET-Pi lo rota su propio instalar_servicio.sh
 # (/etc/logrotate.d/TectorNET-Pi) -- no se repite aca: logrotate se queja
 # de entradas duplicadas para el mismo archivo.

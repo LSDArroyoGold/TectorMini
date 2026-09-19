@@ -38,6 +38,14 @@ printf '{"version_formato":1,"serie":"0003","generado":"%s","estado":"en_linea",
 timeout 60 rclone copyto "$ESTADO_TMP" "$SYNC_REMOTE:$SYNC_PATH/estado.json" --contimeout 20s --timeout 30s 2>/dev/null
 rm -f "$ESTADO_TMP"
 
+# --- log_salud.txt: historial de temperatura/throttled/carga (mismo formato
+# que Tector 2; los bits 16-19 de throttled son latches desde el arranque).
+# -s y no -e: logrotate (copytruncate) deja el archivo existiendo pero vacio.
+LOG_SALUD="$BASE_PATH/log_salud.txt"
+[ -s "$LOG_SALUD" ] || echo "timestamp,temp_cpu_c,throttled,load_avg_1min" > "$LOG_SALUD"
+echo "$(date '+%Y-%m-%d %H:%M:%S'),$TEMP,$THROTTLED,$(cut -d' ' -f1 /proc/loadavg)" >> "$LOG_SALUD"
+timeout 60 rclone copyto "$LOG_SALUD" "$SYNC_REMOTE:$SYNC_PATH/log_salud.txt" --contimeout 20s --timeout 30s 2>/dev/null
+
 flock -n /tmp/sincronizar_detecciones.lock \
 	timeout 600 rclone copy "$USER_HOME/BirdSongs/Extracted/By_Date/" "$SYNC_REMOTE:$SYNC_PATH/Detecciones/" \
 	--max-age 7d --min-age 1m --transfers 2 --contimeout 20s --timeout 60s --retries 2 2>/dev/null
