@@ -9,3 +9,6 @@ __pycache__/
 .software.git/
 .ultima_actualizacion*
 log_*.txt
+
+# Pipe que crea liblgpio (RPi.GPIO) en el directorio de trabajo de cualquier script que use GPIO
+.lgd-nfy*
