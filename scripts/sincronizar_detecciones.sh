@@ -29,7 +29,7 @@ SYNC_REMOTE="${SYNC_REMOTE:-servidor}"
 # --- estado.json (formato de la 2.1, recortado: sin ventanas ni bateria: la app muestra la fila Bateria si existe la clave) ---
 HOY=$(date +%Y-%m-%d)
 DETECCIONES_HOY=$(find "$USER_HOME/BirdSongs/Extracted/By_Date/$HOY" -name '*.mp3' ! -name '*-nbw.mp3' 2>/dev/null | wc -l)
-TEMP=$(awk '{printf "%.1f", $1/1000}' /sys/class/thermal/thermal_zone0/temp 2>/dev/null)
+TEMP=$(LC_ALL=C awk '{printf "%.1f", $1/1000}' /sys/class/thermal/thermal_zone0/temp 2>/dev/null)
 THROTTLED=$(vcgencmd get_throttled 2>/dev/null | cut -d= -f2)
 VERSION=$(cut -c1-7 "$BASE_PATH/.ultima_actualizacion" 2>/dev/null)
 ESTADO_TMP=$(mktemp)
@@ -38,12 +38,21 @@ printf '{"version_formato":1,"serie":"0003","generado":"%s","estado":"en_linea",
 timeout 60 rclone copyto "$ESTADO_TMP" "$SYNC_REMOTE:$SYNC_PATH/estado.json" --contimeout 20s --timeout 30s 2>/dev/null
 rm -f "$ESTADO_TMP"
 
-# --- log_salud.txt: historial de temperatura/throttled/carga (mismo formato
-# que Tector 2; los bits 16-19 de throttled son latches desde el arranque).
-# -s y no -e: logrotate (copytruncate) deja el archivo existiendo pero vacio.
+# --- log_salud.txt: historial de salud del equipo (mismo formato que Tector 2).
+# temp, throttled (los bits 16-19 son latches desde el arranque), load, MHz
+# reales del CPU, uptime en segundos (si baja entre dos filas hubo un
+# reinicio), % de disco en / y RAM disponible en MB.
+# Columnas fijas: si alguna vez cambian, apartar a mano el log viejo (un
+# encabezado que no coincide con las filas fue el bug de log_bateria.txt).
 LOG_SALUD="$BASE_PATH/log_salud.txt"
-[ -s "$LOG_SALUD" ] || echo "timestamp,temp_cpu_c,throttled,load_avg_1min" > "$LOG_SALUD"
-echo "$(date '+%Y-%m-%d %H:%M:%S'),$TEMP,$THROTTLED,$(cut -d' ' -f1 /proc/loadavg)" >> "$LOG_SALUD"
+ENCABEZADO="timestamp,temp_cpu_c,throttled,load_avg_1min,cpu_mhz,uptime_s,disco_pct,ram_disp_mb"
+# -s y no -e: logrotate (copytruncate) deja el archivo existiendo pero vacio.
+[ -s "$LOG_SALUD" ] || echo "$ENCABEZADO" > "$LOG_SALUD"
+MHZ=$(timeout 5 vcgencmd measure_clock arm 2>/dev/null | awk -F= '{printf "%d", $2/1000000}')
+UPTIME=$(cut -d. -f1 /proc/uptime)
+DISCO=$(df --output=pcent / | tail -n1 | tr -dc '0-9')
+RAM=$(awk '/^MemAvailable:/{printf "%d", $2/1024}' /proc/meminfo)
+echo "$(date '+%Y-%m-%d %H:%M:%S'),$TEMP,$THROTTLED,$(cut -d' ' -f1 /proc/loadavg),$MHZ,$UPTIME,$DISCO,$RAM" >> "$LOG_SALUD"
 timeout 60 rclone copyto "$LOG_SALUD" "$SYNC_REMOTE:$SYNC_PATH/log_salud.txt" --contimeout 20s --timeout 30s 2>/dev/null
 
 flock -n /tmp/sincronizar_detecciones.lock \

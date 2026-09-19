@@ -204,4 +204,4 @@ Si hace falta cambiar de red WiFi después del primer arranque (sin acceso SSH a
 
 ## Monitoreo remoto
 
-`log_sistema.txt` y `log_reciente.txt` se suben al servidor (`data/`) cada vez que corre `hotspot.sh` con conexión exitosa o `generar_log_reciente.sh`, y permiten monitorear el estado del dispositivo de forma remota (también desde el Hub). Además `sincronizar_detecciones.sh` anota cada 10 min temperatura de CPU, `throttled` y carga en `log_salud.txt` y lo sube a `data/` (los bits 16-19 de `throttled` son latches de lo ocurrido desde el arranque; sirve para ver cuándo empezó un undervoltage).
+`log_sistema.txt` y `log_reciente.txt` se suben al servidor (`data/`) cada vez que corre `hotspot.sh` con conexión exitosa o `generar_log_reciente.sh`, y permiten monitorear el estado del dispositivo de forma remota (también desde el Hub). Además `sincronizar_detecciones.sh` anota cada 10 min temperatura de CPU, `throttled`, carga, MHz reales, uptime, % de disco y RAM disponible en `log_salud.txt` y lo sube a `data/` (los bits 16-19 de `throttled` son latches de lo ocurrido desde el arranque; sirve para ver cuándo empezó un undervoltage).

@@ -35,10 +35,11 @@
 }
 
 # log_salud.txt (sincronizar_detecciones.sh cada 10 min = 144 filas/dia,
-# cadencia fija). ~38 bytes/fila -> ~5.5KB/dia -> ~2MB/año. 3M da ~1.5 años.
+# cadencia fija). ~57 bytes/fila (8 columnas) -> ~8KB/dia -> ~3MB/año. 4M da
+# ~1.3 años de margen.
 /home/lsd/TectorMini/log_salud.txt
 {
-	size 3M
+	size 4M
 	rotate 0
 	missingok
 	notifempty
