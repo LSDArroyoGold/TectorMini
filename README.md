@@ -165,7 +165,7 @@ sudo systemctl start TectorNET-Pi.service
 journalctl -u TectorNET-Pi.service -f     # o: tail -f ~/TectorNET-Pi/motor.log
 ```
 
-`instalar_servicio.sh` también habilita `linger` para el usuario (necesario para que `arecord` vía PulseAudio siga funcionando sin sesión abierta) y registra la rotación de `motor.log`.
+`instalar_servicio.sh` también habilita `linger` para el usuario (deja correr el servicio sin sesión abierta) y registra la rotación de `motor.log`.
 
 > [!NOTE]
 > La regla de logrotate que instala `instalar_servicio.sh` no trae la directiva `su`, así que logrotate se niega a rotar `motor.log` ("parent directory has insecure permissions"). Agregarla a mano una vez:
