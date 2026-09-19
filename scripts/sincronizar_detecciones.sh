@@ -31,7 +31,7 @@ HOY=$(date +%Y-%m-%d)
 DETECCIONES_HOY=$(find "$USER_HOME/BirdSongs/Extracted/By_Date/$HOY" -name '*.mp3' ! -name '*-nbw.mp3' 2>/dev/null | wc -l)
 TEMP=$(awk '{printf "%.1f", $1/1000}' /sys/class/thermal/thermal_zone0/temp 2>/dev/null)
 THROTTLED=$(vcgencmd get_throttled 2>/dev/null | cut -d= -f2)
-VERSION=$(git -C "$BASE_PATH" rev-parse --short=7 HEAD 2>/dev/null)
+VERSION=$(cut -c1-7 "$BASE_PATH/.ultima_actualizacion" 2>/dev/null)
 ESTADO_TMP=$(mktemp)
 printf '{"version_formato":1,"serie":"0003","generado":"%s","estado":"en_linea","detecciones_hoy":%s,"temp_cpu_c":%s,"throttled":"%s","version_software":"%s","drive_path":"%s"}\n' \
 	"$(date +%Y-%m-%dT%H:%M:%S)" "$DETECCIONES_HOY" "${TEMP:-null}" "${THROTTLED:-0x0}" "$VERSION" "$SYNC_PATH" > "$ESTADO_TMP"
