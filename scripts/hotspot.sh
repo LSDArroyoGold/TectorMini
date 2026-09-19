@@ -42,6 +42,11 @@ SYNC_REMOTE=$(awk -F'=' '/^SYNC_REMOTE=/{print $2}' "$CONFIG_PATH" | tr -d ' \r'
 SYNC_REMOTE="${SYNC_REMOTE:-servidor}"
 HOTSPOT_SSID=$(awk -F'=' '/^HOTSPOT_SSID=/{print $2}' "$CONFIG_PATH" | tr -d '\r')
 HOTSPOT_PASSWORD=$(awk -F'=' '/^HOTSPOT_PASSWORD=/{print $2}' "$CONFIG_PATH" | tr -d '\r')
+# El SSID sale del numero de serie que asigna la fabrica (config/serie.txt, formato
+# SERIE=####, igual que Tector2): cada equipo expone una red distinta. Sin serie
+# queda el HOTSPOT_SSID de config_general.txt.
+SERIE=$(awk -F'=' '/^SERIE=/{print $2}' "$BASE_PATH/config/serie.txt" 2>/dev/null | tr -d ' \r')
+[ -n "$SERIE" ] && HOTSPOT_SSID="Tector-${SERIE}-setup"
 
 log() {
 	python3 "$BASE_PATH/python/log_sistema.py" "$1"

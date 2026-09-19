@@ -12,3 +12,6 @@ log_*.txt
 
 # Pipe que crea liblgpio (RPi.GPIO) en el directorio de trabajo de cualquier script que use GPIO
 .lgd-nfy*
+
+# Numero de serie de este equipo (lo asigna la fabrica / el servidor; no se versiona)
+config/serie.txt

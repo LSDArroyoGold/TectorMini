@@ -26,6 +26,8 @@ SYNC_REMOTE="${SYNC_REMOTE:-servidor}"
 
 [ -n "$SYNC_PATH" ] || exit 0
 
+SERIE=$(awk -F'=' '/^SERIE=/{print $2}' "$BASE_PATH/config/serie.txt" 2>/dev/null | tr -d ' \r')
+
 # --- estado.json (formato de la 2.1, recortado: sin ventanas ni bateria: la app muestra la fila Bateria si existe la clave) ---
 HOY=$(date +%Y-%m-%d)
 DETECCIONES_HOY=$(find "$USER_HOME/BirdSongs/Extracted/By_Date/$HOY" -name '*.mp3' ! -name '*-nbw.mp3' 2>/dev/null | wc -l)
@@ -33,8 +35,8 @@ TEMP=$(LC_ALL=C awk '{printf "%.1f", $1/1000}' /sys/class/thermal/thermal_zone0/
 THROTTLED=$(vcgencmd get_throttled 2>/dev/null | cut -d= -f2)
 VERSION=$(cut -c1-7 "$BASE_PATH/.ultima_actualizacion" 2>/dev/null)
 ESTADO_TMP=$(mktemp)
-printf '{"version_formato":1,"serie":"0003","generado":"%s","estado":"en_linea","detecciones_hoy":%s,"temp_cpu_c":%s,"throttled":"%s","version_software":"%s","carpeta":"%s"}\n' \
-	"$(date +%Y-%m-%dT%H:%M:%S)" "$DETECCIONES_HOY" "${TEMP:-null}" "${THROTTLED:-0x0}" "$VERSION" "$SYNC_PATH" > "$ESTADO_TMP"
+printf '{"version_formato":1,"serie":"%s","generado":"%s","estado":"en_linea","detecciones_hoy":%s,"temp_cpu_c":%s,"throttled":"%s","version_software":"%s","carpeta":"%s"}\n' \
+	"$SERIE" "$(date +%Y-%m-%dT%H:%M:%S)" "$DETECCIONES_HOY" "${TEMP:-null}" "${THROTTLED:-0x0}" "$VERSION" "$SYNC_PATH" > "$ESTADO_TMP"
 timeout 60 rclone copyto "$ESTADO_TMP" "$SYNC_REMOTE:$SYNC_PATH/estado.json" --contimeout 20s --timeout 30s 2>/dev/null
 rm -f "$ESTADO_TMP"
 
