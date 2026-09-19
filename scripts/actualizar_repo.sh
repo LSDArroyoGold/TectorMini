@@ -3,33 +3,40 @@
 SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
 BASE_PATH="$(dirname "$SCRIPT_DIR")"
 
-REPO="LSDArroyoGold/TectorMini"
-RAW="https://raw.githubusercontent.com/$REPO/master"
-API="https://api.github.com/repos/$REPO/commits/master"
+# Los dispositivos siguen la rama `stable` del servidor Tector (repo bare
+# espejado desde GitHub, que solo la avanza si el codigo pasa bash -n /
+# py_compile; ver tector-git-sync.sh en el servidor). Nunca hablan con GitHub.
+SERVIDOR="tectorgit@100.83.125.103:tectormini.git"
+export GIT_SSH_COMMAND="ssh -i $HOME/.ssh/id_ed25519_servidor -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=15"
 MARCA="$BASE_PATH/.ultima_actualizacion"
 TMP="$BASE_PATH/.actualizar_tmp"
+CACHE="$BASE_PATH/.software.git"
 
 ULTIMO_SHA=$(cat "$MARCA" 2>/dev/null)
 
-SHA_ACTUAL=$(curl -s "$API" | python3 -c "import sys,json; print(json.load(sys.stdin)['sha'])" 2>/dev/null)
+# Sin conexion al servidor (o sin cambios): salir en silencio, se reintenta
+# en la proxima corrida.
+SHA_ACTUAL=$(timeout 60 git ls-remote "$SERVIDOR" refs/heads/stable 2>/dev/null | cut -f1)
 
 if [ -z "$SHA_ACTUAL" ] || [ "$SHA_ACTUAL" = "$ULTIMO_SHA" ]; then
 	exit 0
 fi
 
+# $CACHE es solo un repo bare local desde donde se leen los archivos.
+[ -d "$CACHE" ] || git init -q --bare "$CACHE"
+if ! timeout 180 git --git-dir="$CACHE" fetch -q "$SERVIDOR" +refs/heads/stable:refs/heads/stable; then
+	echo "Fallo la descarga desde el servidor, aborto sin tocar nada" >&2
+	exit 1
+fi
+SHA_ACTUAL=$(git --git-dir="$CACHE" rev-parse refs/heads/stable)
+
 # Todos los archivos que corren activamente. config_general.txt queda
 # afuera a propósito: guarda estado en vivo del dispositivo (FIRST_START,
 # coordenadas reales), no solo configuración de fábrica.
 #
-# config/rclone.conf SACADO de esta lista el 31/08/2026 (antes se sincronizaba
-# igual que el resto): tiene credenciales OAuth reales (client_secret,
-# refresh_token), y este repo es publico -- GitHub lo detecto via su programa
-# de partners de secret scanning (Google Cloud es partner) y Google revoco el
-# token solo, silenciosamente, ~1 semana despues de que se commiteo,
-# rompiendo la sincronizacion a Drive sin ningun aviso. Ver
-# config/rclone.conf.ejemplo para la forma del archivo -- el real se pone a
-# mano en cada dispositivo (/home/lsd/.config/rclone/rclone.conf), nunca via
-# git/este script.
+# config/rclone.conf tampoco va en esta lista: es configuracion propia de
+# cada dispositivo (ver config/rclone.conf.ejemplo) y se pone a mano en
+# ~/.config/rclone/rclone.conf.
 ARCHIVOS="scripts/hotspot.sh scripts/generar_log_reciente.sh scripts/actualizar_repo.sh scripts/limpiar_retencion.sh scripts/sincronizar_detecciones.sh python/check_button.py python/log_sistema.py python/portal_configuracion.py systemd/hotspot.service config/logrotate-tector"
 
 rm -rf "$TMP"
@@ -37,7 +44,7 @@ mkdir -p "$TMP"
 
 for ARCHIVO in $ARCHIVOS; do
 	mkdir -p "$TMP/$(dirname "$ARCHIVO")"
-	if ! curl -sf -o "$TMP/$ARCHIVO" "$RAW/$ARCHIVO"; then
+	if ! git --git-dir="$CACHE" show "$SHA_ACTUAL:$ARCHIVO" > "$TMP/$ARCHIVO" 2>/dev/null; then
 		echo "Fallo la descarga de $ARCHIVO, aborto sin tocar nada" >&2
 		rm -rf "$TMP"
 		exit 1
